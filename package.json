@@ -1,0 +1,10 @@
+{
+  "name": "pub-vitrine-pro",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "PUB — vitrine + webhook WhatsApp branché",
+  "dependencies": {
+    "@netlify/blobs": "^8.1.0"
+  }
+}

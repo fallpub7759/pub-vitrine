@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PUB</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#dfe5e2;font-family:Arial,Helvetica,sans-serif;color:#17201d}
+.app{width:min(100%,720px);height:100dvh;margin:auto;background:#efeae2;display:flex;flex-direction:column;overflow:hidden}
+.head{height:68px;background:#075e54;color:#fff;display:flex;align-items:center;padding:10px 15px;gap:11px}.avatar{width:44px;height:44px;border-radius:50%;background:#25d366;display:grid;place-items:center;font-weight:800;font-size:21px}.name{font-size:19px;font-weight:800}.on{font-size:12px;opacity:.8}
+.note{background:#fff7d8;color:#75651e;text-align:center;padding:7px;font-size:11px;border-bottom:1px solid #e7ddb7}
+.chat{flex:1;overflow:auto;padding:14px 10px 170px;background-image:radial-gradient(#dcd5cb 1px,transparent 1px);background-size:18px 18px}
+.day{width:max-content;margin:0 auto 15px;padding:6px 11px;border-radius:15px;background:#e3ddd5;color:#777;font-size:11px}
+.m{max-width:92%;background:#fff;padding:11px 13px;margin:7px 0;border-radius:5px 14px 14px 14px;box-shadow:0 1px 2px #0002;font-size:14px;line-height:1.45}.u{margin-left:auto;background:#d9ffc9;border-radius:14px 5px 14px 14px}.tm{float:right;color:#89918e;font-size:9px;margin:7px 0 -3px 10px}.clear{clear:both}
+.bottom{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:min(100%,720px);background:#f4f6f5;border-top:1px solid #d8dedb;padding:8px 9px calc(8px + env(safe-area-inset-bottom));z-index:10}
+.buttons{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:7px}.one{grid-template-columns:1fr}.btn{border:1px solid #d1dcda;background:#fff;color:#075e54;border-radius:11px;padding:11px 9px;min-height:44px;font-weight:700;font-size:13px;text-align:left}.primary{background:#075e54;color:#fff;border-color:#075e54;text-align:center}
+.compose{display:flex;gap:7px}.compose input{flex:1;border:0;outline:0;border-radius:24px;padding:12px 15px;font-size:15px}.send{width:46px;height:46px;border:0;border-radius:50%;background:#128c7e;color:white;font-size:18px}
+.card{background:#fff;border:1px solid #e0e5e3;border-radius:13px;padding:12px;margin-top:7px}.field{margin:8px 0}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:5px}.field input{width:100%;padding:10px;border:1px solid #ccd7d3;border-radius:9px}
+.photo{width:100%;max-height:280px;object-fit:cover;border-radius:11px;margin-top:6px}.ad{border:1px solid #ddd;border-radius:12px;overflow:hidden;background:#fff}.adimg{height:185px;background:linear-gradient(135deg,#d7e9e3,#f1ddd8,#dce5ef);display:grid;place-items:center;font-weight:800;font-size:25px}.adcopy{padding:11px}.price{font-size:18px;font-weight:800;margin-top:4px}.tags{color:#2563eb;font-size:12px;margin-top:7px}.small{font-size:11px;color:#687773}
+@media(max-width:390px){.m{font-size:13.5px}.btn{font-size:12px}.head{height:64px}}
+</style>
+</head>
+<body>
+<div class="app">
+<header class="head"><div class="avatar">P</div><div><div class="name">PUB</div><div class="on">en ligne</div></div></header>
+<div class="note">Aperçu du parcours · pour lancer votre campagne, continuez sur WhatsApp</div>
+<main id="chat" class="chat"><div class="day">Aujourd’hui</div></main>
+<div id="bottom" class="bottom"></div>
+</div>
+<script>
+"use strict";
+const chat=document.getElementById("chat"),bottom=document.getElementById("bottom");
+const S={kind:null,channel:null,objective:null,product:null,price:null,zone:null,phone:null,site:null,days:null,budget:null,photo:null,accountConnected:false};
+const plans=[["🚀 Starter",3,2900],["🔥 Essentiel",5,4500],["⭐ Performance",7,6500],["📈 Croissance",15,12990],["🏆 Business",30,24990]];
+const labels={commandes:"Commandes",messages:"Messages",site:"Visites site",appels:"Appels",notoriete:"Abonnés / notoriété",visibilite:"Visibilité",auto:"PUB choisit"};
+
+function esc(v){return String(v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+function msg(t,user=false,raw=false){const d=document.createElement("div");d.className="m"+(user?" u":"");d.innerHTML=(raw?t:esc(t).replace(/\n/g,"<br>"))+`<span class="tm">${new Date().toLocaleTimeString("fr-FR",{hour:"2-digit",minute:"2-digit"})}</span><div class="clear"></div>`;chat.appendChild(d);chat.scrollTop=chat.scrollHeight}
+function actions(a,one=false){bottom.innerHTML=`<div class="buttons ${one?"one":""}">${a.map(x=>`<button class="btn ${x[2]||""}" data-a="${x[1]}">${x[0]}</button>`).join("")}</div><div class="compose"><input id="input" placeholder="Message" autocomplete="off"><button class="send" id="send">➤</button></div>`}
+function text(){return document.getElementById("input")?.value.trim()||""}
+function clear(){const e=document.getElementById("input");if(e)e.value=""}
+
+function start(){
+ msg("Bonjour 👋\nQu’est-ce que vous souhaitez booster ?");
+ actions([
+  ["📦 Un produit / une offre","product"],
+  ["📄 Une page Facebook","facebook"],
+  ["📸 Un compte Instagram","instagram"],
+  ["👻 Un compte Snapchat","snap"],
+  ["🎵 Un compte TikTok","tiktok"],
+  ["💬 Continuer directement sur WhatsApp","open-wa","primary"]
+ ]);
+}
+
+/* PRODUIT */
+function productStart(){
+ S.kind="product";
+ msg("Un produit / une offre",true);
+ msg("Avant d’envoyer la photo ou la vidéo, choisissez où vous voulez diffuser la publicité.");
+ actions([["Facebook + Instagram","meta"],["Snapchat","snap-channel"],["TikTok","tiktok-channel"]]);
+}
+function channel(c){
+ S.channel=c;msg(c==="meta"?"Facebook + Instagram (Meta)":"Snapchat",true);
+ if(c==="meta") metaPageQuestion();
+ else productMedia();
+}
+function metaPageQuestion(){
+ msg("Vous avez une Page Facebook ?");
+ actions([["Oui, je la connecte","connect-page"],["Non, je n’en ai pas","no-page"]],true);
+}
+function connectPage(){
+ S.accountConnected=true;msg("Je connecte ma Page Facebook.",true);
+ msg("Page Facebook connectée.");
+ productMedia();
+}
+function noPage(){
+ msg("D’accord. On continue sans Page Facebook.");
+ productMedia();
+}
+function productMedia(){
+ msg("Envoyez maintenant la photo ou la vidéo.");
+ bottom.innerHTML=`<div class="card"><div class="field"><label>Photo ou vidéo</label><input id="media" type="file" accept="image/*,video/*"></div></div><div class="compose"><input id="input" placeholder="Message"><button class="send" id="send">➤</button></div>`;
+}
+function receiveMedia(f){
+ if(!f)return;
+ S.photo=f;
+ if(f.type.startsWith("image/")){S.photo=URL.createObjectURL(f);msg("Photo envoyée.",true);msg(`<img class="photo" src="${S.photo}" alt="Contenu reçu">`,false,true)}
+ else msg("Vidéo envoyée.",true);
+ msg("Je prépare la publicité dans le format du canal choisi.");
+ setTimeout(()=>{
+  S.product="Produit / offre";
+  msg("Publicité préparée. Quel est le prix ? Vous pouvez aussi continuer sans prix.");
+  actions([["Sans prix","no-price"],["Indiquer le prix","ask-price"]],true);
+ },500);
+}
+function askPrice(){
+ msg("Quel est le prix ?",false);
+ actions([],true);
+}
+function priceReceived(v){
+ const n=v.replace(/[^\d]/g,"");
+ if(n){S.price=Number(n);msg(S.price.toLocaleString("fr-FR")+" F",true);afterPrice()}
+ else {msg("Vous pouvez écrire « sans prix » pour continuer.");actions([["Sans prix","no-price"]],true)}
+}
+function afterPrice(){
+ generateAd(); productObjective();
+}
+function noPrice(){S.price=0;msg("Sans prix",true);generateAd();productObjective()}
+function generateAd(){
+ const channel=S.channel==="meta"?"Facebook + Instagram":S.channel==="snap"?"Snapchat":"TikTok";
+ const tags=S.channel==="snap"?"#Snapchat #Sénégal #Nouveau":S.channel==="tiktok"?"#TikTok #Sénégal #Nouveau":"#Facebook #Instagram #Sénégal";
+ const visual=S.photo&&typeof S.photo==="string"?`<img class="photo" src="${S.photo}" alt="Publicité">`:`<div class="adimg">PUB</div>`;
+ const price=S.price?`<div class="price">${S.price.toLocaleString("fr-FR")} F</div>`:"";
+ msg(`<div class="ad">${visual}<div class="adcopy"><b>${esc(S.product)}</b>${price}<div style="margin-top:7px">Découvrez cette offre dès maintenant. Contactez-nous pour en profiter.</div><div class="tags">${tags}</div><div class="small">Format adapté à ${channel}</div></div></div>`,false,true);
+}
+function productObjective(){
+ msg("Quel résultat recherchez-vous ?");
+ actions([
+ ["🛒 Commandes","obj-commandes"],["💬 Messages","obj-messages"],
+ ["🌐 Visites site","obj-site"],["📞 Appels","obj-appels"],
+ ["👥 Abonnés / notoriété","obj-notoriete"],["🎯 PUB choisit","obj-auto"]
+ ]);
+}
+
+/* PAGE / COMPTE */
+function facebookStart(){
+ S.kind="page";S.channel="meta";
+ msg("Une page Facebook",true);
+ msg("Connectez votre Page Facebook pour commencer.");
+ actions([["Connecter ma Page","connect-page-start"],["Je n’ai pas de Page","no-page-start"]],true);
+}
+function connectedPage(){
+ S.accountConnected=true;msg("Page Facebook connectée.",true);pageObjective();
+}
+function pageObjective(){
+ msg("Quel résultat recherchez-vous ?");
+ actions([["👥 Gagner des abonnés","obj-notoriete"],["👀 Augmenter la visibilité","obj-visibilite"],["🛒 Promouvoir une offre","obj-commandes"]]);
+}
+function noPageStart(){
+ msg("Pas de Page Facebook. Que souhaitez-vous faire ?");
+ actions([["Créer la publicité pour mon activité","activity"],["Promouvoir un produit / une offre","product"]]);
+}
+function accountStart(kind){
+ S.kind=kind;S.channel=kind==="instagram"?"meta":kind==="snap"?"snap":"tiktok";
+ msg(kind==="instagram"?"Un compte Instagram":kind==="snap"?"Un compte Snapchat":"Un compte TikTok",true);
+ msg(kind==="instagram"?"Connectez votre compte Instagram.":kind==="snap"?"Quel compte Snapchat souhaitez-vous booster ?":"Quel compte TikTok souhaitez-vous booster ?");
+ actions([[kind==="instagram"?"Connecter Instagram":kind==="snap"?"Continuer":"Continuer",kind==="instagram"?"ig-connect":kind==="snap"?"snap-connect":"tiktok-connect","primary"]],true);
+}
+function accountDone(){
+ S.accountConnected=true;
+ S.product=S.kind==="instagram"?"Compte Instagram":S.kind==="snap"?"Compte Snapchat":"Compte TikTok";
+ msg("C’est bon.");
+ msg("Quel résultat recherchez-vous ?");
+ actions([["👥 Gagner des abonnés","obj-notoriete"],["👀 Augmenter la visibilité","obj-visibilite"],["📣 Faire connaître mon contenu","obj-notoriete"]]);
+}
+
+/* OBJECTIFS */
+function chooseObj(o){
+ S.objective=o;msg(labels[o]||o,true);
+ if(o==="messages"||o==="appels"){msg(o==="messages"?"Quel numéro WhatsApp recevra les messages ?":"Quel numéro les clients doivent-ils appeler ?");actions([],true)}
+ else if(o==="site"){msg("Quelle est l’adresse du site ?");actions([],true)}
+ else if(S.kind==="product"||S.kind==="page"||S.kind==="facebook")zoneStart();
+ else duration();
+}
+function zoneStart(){
+ msg("Quelle zone voulez-vous cibler ?");
+ actions([["🇸🇳 Tout le Sénégal","zone-senegal"],["📍 Dakar","zone-dakar"],["📍 Thiès","zone-thies"],["📍 Plusieurs zones","zone-custom"]]);
+}
+function setZone(z){S.zone=z;msg(z,true);duration()}
+function customZone(){msg("Indiquez les zones, par exemple : Dakar, Thiès.");actions([],true)}
+function duration(){
+ msg("Quelle durée ?");
+ actions(plans.map((p,i)=>[`${p[0]} · ${p[1]} jours — ${p[2].toLocaleString("fr-FR")} F`,`plan-${i}`]));
+}
+function plan(i){S.days=plans[i][1];S.budget=plans[i][2];msg(`${plans[i][0]} · ${S.days} jours — ${S.budget.toLocaleString("fr-FR")} F`,true);forecast()}
+function forecast(){
+ msg(`Ciblage
+Zone : ${S.zone||"Audience adaptée au compte"}
+Objectif : ${labels[S.objective]||S.objective}
+Canal : ${S.channel==="meta"?"Facebook + Instagram":S.channel==="snap"?"Snapchat":"TikTok"}
+
+Audience : sélection automatique selon l’objectif, le contenu, la zone et le canal.
+
+Prévisions
+Portée : 4 000 – 8 000
+Résultats potentiels : 15 – 45
+Coût / résultat : 145 – 430 F
+
+Prévision indicative, non garantie.`);
+ actions([["Continuer","recap","primary"]],true);
+}
+function recap(){
+ msg(`Campagne prête
+${S.product||"Campagne"}
+Canal : ${S.channel==="meta"?"Facebook + Instagram":S.channel==="snap"?"Snapchat":"TikTok"}
+Objectif : ${labels[S.objective]||S.objective}
+${S.zone?"Zone : "+S.zone+"\n":""}Durée : ${S.days} jours
+Total : ${S.budget.toLocaleString("fr-FR")} F`);
+ actions([["Payer avec Wave","wave"],["Payer avec Orange Money","om"]]);
+}
+function pay(method){msg(method==="wave"?"Wave":"Orange Money",true);msg(`Paiement de ${S.budget.toLocaleString("fr-FR")} F`);actions([["Simuler le paiement","launch","primary"]],true)}
+function launch(){msg(`Paiement confirmé.\nCampagne lancée — jour 1/${S.days}.`);actions([["Voir le suivi","tracking"]],true)}
+function tracking(){msg(`Suivi
+Portée : 4 820
+Résultats : 37
+Coût / résultat : 103 F
+Budget consommé : 2 850 / ${S.budget.toLocaleString("fr-FR")} F`);actions([["Nouvelle campagne","restart"]],true)}
+function restart(){location.reload()}
+
+/* GESTION DES CLICS */
+bottom.addEventListener("click",e=>{
+ const b=e.target.closest("[data-a]"); if(!b)return;
+ const a=b.dataset.a;
+ if(a==="open-wa"){ window.location.href="https://wa.me/221783700717?text=Bonjour%20PUB%2C%20je%20souhaite%20lancer%20une%20publicit%C3%A9"; return; }
+ if(a==="product")productStart();
+ else if(a==="facebook")facebookStart();
+ else if(a==="instagram")accountStart("instagram");
+ else if(a==="snap")accountStart("snap");
+ else if(a==="meta")channel("meta");
+ else if(a==="snap-channel")channel("snap");
+ else if(a==="tiktok-channel")channel("tiktok");
+ else if(a==="connect-page")connectPage();
+ else if(a==="no-page")noPage();
+ else if(a==="connect-page-start")connectedPage();
+ else if(a==="no-page-start")noPageStart();
+ else if(a==="ig-connect"||a==="snap-connect"||a==="tiktok-connect")accountDone();
+ else if(a==="activity"){S.kind="page";S.channel="meta";S.objective="notoriete";msg("Mon activité",true);zoneStart()}
+ else if(a==="obj-commandes")chooseObj("commandes");
+ else if(a==="obj-messages")chooseObj("messages");
+ else if(a==="obj-site")chooseObj("site");
+ else if(a==="obj-appels")chooseObj("appels");
+ else if(a==="obj-notoriete")chooseObj("notoriete");
+ else if(a==="obj-visibilite")chooseObj("visibilite");
+ else if(a==="obj-auto")chooseObj("auto");
+ else if(a==="zone-senegal")setZone("Sénégal");
+ else if(a==="zone-dakar")setZone("Dakar");
+ else if(a==="zone-thies")setZone("Thiès");
+ else if(a==="zone-custom")customZone();
+ else if(a.startsWith("plan-"))plan(Number(a.split("-")[1]));
+ else if(a==="no-price")noPrice();
+ else if(a==="ask-price")askPrice();
+ else if(a==="recap")recap();
+ else if(a==="wave")pay("wave");
+ else if(a==="om")pay("om");
+ else if(a==="launch")launch();
+ else if(a==="tracking")tracking();
+ else if(a==="restart")restart();
+});
+
+bottom.addEventListener("change",e=>{
+ if(e.target.id==="media"&&e.target.files?.[0])receiveMedia(e.target.files[0]);
+});
+bottom.addEventListener("click",e=>{if(e.target.id==="send")sendText()});
+bottom.addEventListener("keydown",e=>{if(e.target.id==="input"&&e.key==="Enter")sendText()});
+
+function sendText(){
+ const v=text();if(!v)return;msg(v,true);clear();
+ if(S.kind==="product"&&S.price===null){if(v.toLowerCase().includes("sans prix"))noPrice();else priceReceived(v);return}
+ if((S.objective==="messages"||S.objective==="appels")&&!S.phone){S.phone=v;if(S.kind==="product")zoneStart();else duration();return}
+ if(S.objective==="site"&&!S.site){S.site=v;if(S.kind==="product")zoneStart();else duration();return}
+ if(S.kind==="product"&&!S.zone){S.zone=v.split(",").map(x=>x.trim()).filter(Boolean).join(" + ");duration();return}
+ if(S.kind==="page"&&!S.zone){S.zone=v.split(",").map(x=>x.trim()).filter(Boolean).join(" + ");duration();return}
+ msg("C’est noté.");
+}
+start();
+</script>
+</body>
+</html>

@@ -1,0 +1,8 @@
+[functions]
+  directory = "netlify/functions"
+
+[[redirects]]
+  from = "/webhook/whatsapp"
+  to = "/.netlify/functions/whatsapp-webhook"
+  status = 200
+  force = true
